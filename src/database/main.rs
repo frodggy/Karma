@@ -18,12 +18,13 @@ impl KarmaDatabase {
         }
     }
 
-    pub async fn get(&self, key: &str) -> Option<KarmaStore> {
+    pub async fn get(&self, key: &str) /* -> Option<KarmaStore> */ {
         let db = self.db.lock().unwrap();
-        match db.get(key).cloned() {
-            Some(item) => return Some(item),
-            None => return None
-        }
+        // match db.get(key).cloned() {
+        //     Some(item) => return Some(item),
+        //     None => return None
+        // }
+        println!("{:?}", db.get(key).cloned());
     }
     pub async fn set(&self, key: &str, value: KarmaStore) {
         let mut db = self.db.lock().unwrap();
@@ -59,12 +60,7 @@ impl KarmaDatabase {
         match q[0] {
             "get" => {
                 if q.len() == 2 {
-                    let value = self.get(q[1]);
-                    if let Some(item) = value.await {
-                        println!("{:?}", item);
-                    } else {
-                        eprintln!("no item with such a key was found")
-                    }
+                    self.get(q[1]).await;
                 } else {
                     eprintln!("Not enough arguments")
                 }
@@ -73,9 +69,9 @@ impl KarmaDatabase {
                 if q.len() == 3 {
                     if q[2].starts_with("%n") {
                         q[2] = q[2].strip_prefix("%n").unwrap();
-                        self.set(q[1], KarmaStore::Int(q[2].parse().unwrap()));
+                        self.set(q[1], KarmaStore::Int(q[2].parse().unwrap())).await;
                     } else {
-                        self.set(q[1], KarmaStore::String(q[2].to_string()));
+                        self.set(q[1], KarmaStore::String(q[2].to_string())).await;
                     }
                 } else {
                     eprintln!("Not enough arguments")
@@ -83,7 +79,7 @@ impl KarmaDatabase {
             }
             "delete" => {
                 if q.len() == 2 {
-                    self.delete(q[1]);
+                    self.delete(q[1]).await;
                 } else {
                     eprintln!("Not enough arguments")
                 }
