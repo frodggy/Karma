@@ -18,18 +18,17 @@ impl KarmaDatabase {
         }
     }
 
-    pub async fn get(&self, key: &str) /* -> Option<KarmaStore> */ {
+    pub async fn get(&self, key: &str) -> Option<KarmaStore>
+    {
         let db = self.db.lock().unwrap();
-        // match db.get(key).cloned() {
-        //     Some(item) => return Some(item),
-        //     None => return None
-        // }
-        println!("{:?}", db.get(key).cloned());
+        match db.get(key).cloned() {
+            Some(item) => return Some(item),
+            None => return None
+        }
     }
     pub async fn set(&self, key: &str, value: KarmaStore) {
         let mut db = self.db.lock().unwrap();
-        let out = db.insert(String::from(key), value);
-
+        let _ = db.insert(String::from(key), value);
     }
     pub async fn delete(&self, key: &str) {
         let mut db = self.db.lock().unwrap();
@@ -53,12 +52,16 @@ impl KarmaDatabase {
         self.port = data.port;
     }
 
-    pub async fn execute(&mut self, query: &str) {
-        let mut q = query.split_whitespace().collect::<Vec<&str>>();
-        match q[0] {
+    pub async fn execute(&mut self, query: String) {
+        let qs = query.as_str().split_whitespace().collect::<Vec<&str>>();
+        let mut q: Vec<String> = vec![];
+        for v in qs {
+            q.append(&mut vec![v.to_string()])
+        }
+        match q[0].as_str() {
             "get" => {
                 if q.len() == 2 {
-                    self.get(q[1]).await;
+                    self.get(&q[1]).await;
                 } else {
                     eprintln!("Not enough arguments")
                 }
@@ -66,10 +69,11 @@ impl KarmaDatabase {
             "set" => {
                 if q.len() == 3 {
                     if q[2].starts_with("%n") {
-                        q[2] = q[2].strip_prefix("%n").unwrap();
-                        self.set(q[1], KarmaStore::Int(q[2].parse().unwrap())).await;
+                        q[2] = q[2].strip_prefix("%n").unwrap().to_string();
+                        self.set(&q[1], KarmaStore::Int(q[2].parse().unwrap()))
+                            .await;
                     } else {
-                        self.set(q[1], KarmaStore::String(q[2].to_string())).await;
+                        self.set(&q[1], KarmaStore::String(q[2].to_string())).await;
                     }
                 } else {
                     eprintln!("Not enough arguments")
@@ -77,10 +81,13 @@ impl KarmaDatabase {
             }
             "delete" => {
                 if q.len() == 2 {
-                    self.delete(q[1]).await;
+                    self.delete(&q[1]).await;
                 } else {
                     eprintln!("Not enough arguments")
                 }
+            }
+            "database" => {
+                println!("{:?}", self.db)
             }
             "help" => {
                 println!("commands:\n   set - set key to a value\n   get - retrieve value by key\n   delete - delete value by key\n   help - prints commands"
@@ -89,7 +96,7 @@ impl KarmaDatabase {
             ".write" => self.save_to_kdb().await,
             ".open" => {
                 if q.len() == 2 {
-                    self.load_from_kdb(format!("{}.kdb", String::from(q[1]))).await
+                    self.load_from_kdb(format!("{}.kdb", q[1])).await
                 } else {
                     eprintln!("Not enough arguments")
                 }
