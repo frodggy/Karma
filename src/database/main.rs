@@ -29,9 +29,7 @@ impl KarmaDatabase {
     pub async fn set(&self, key: &str, value: KarmaStore) {
         let mut db = self.db.lock().unwrap();
         let out = db.insert(String::from(key), value);
-        if let None = out {
-            eprintln!("insertion failed")
-        }
+
     }
     pub async fn delete(&self, key: &str) {
         let mut db = self.db.lock().unwrap();

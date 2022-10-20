@@ -78,14 +78,14 @@ async fn server(database: KarmaDatabase) {
             };
 
             let operation_buffer =
-                slice_as_array!(&buf[1..4], [u8; 4]).expect("failed to read operation");
+                slice_as_array!(&buf[0..4], [u8; 4]).expect("failed to read operation");
             let operation = i32::from_be_bytes(*operation_buffer);
 
             let data_type_buffer =
                 slice_as_array!(&buf[4..8], [u8; 4]).expect("failed to read data type");
             let data_type = i32::from_be_bytes(*data_type_buffer);
 
-            let key_buffer = slice_as_array!(&buf[8..28], [u8; 28]).expect("failed to read key");
+            let key_buffer = slice_as_array!(&buf[8..28], [u8; 20]).expect("failed to read key");
             let key = String::from_utf8_lossy(key_buffer).to_string();
 
             let val: KarmaStore;
@@ -110,6 +110,7 @@ async fn server(database: KarmaDatabase) {
             }
             match operation {
                 1 => {
+                    println!("{}:{:?}", key, val);
                     db.set(&key, val).await;
                     db.save_to_kdb().await;
                     println!("write complete")
